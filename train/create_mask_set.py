@@ -218,4 +218,4 @@ def read_zip(zip_name):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format='%(asctime)s;%(levelname)s;%(message)s')
 
-    read_zip('DSMSOFT_001_VKB01-5e4e18f0756b351c979eb31f.zip')
+    read_zip('5e4e18f0756b351c979eb31f.zip')
