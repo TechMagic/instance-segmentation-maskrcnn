@@ -1,6 +1,6 @@
-traindata_maskrcnn/
-samples/
-logs/
-cocoapi-master/
 assets/
+cocoapi-master/
+logs/
+samples/
+venv/
 mask_rcnn_coco.h5
