@@ -165,7 +165,7 @@ def display_instances(image, boxes, masks, class_ids, class_names,
             ax.add_patch(p)
     ax.imshow(masked_image.astype(np.uint8))
     if save_location is not None:
-        imsave(fname=save_location, arr=image)
+        imsave(fname=save_location, arr=masked_image)
     if auto_show:
         plt.show()
 
