@@ -14,6 +14,7 @@ import itertools
 import colorsys
 
 import numpy as np
+from skimage.io import imsave
 from skimage.measure import find_contours
 import matplotlib.pyplot as plt
 from matplotlib import patches,  lines
@@ -164,7 +165,7 @@ def display_instances(image, boxes, masks, class_ids, class_names,
             ax.add_patch(p)
     ax.imshow(masked_image.astype(np.uint8))
     if save_location is not None:
-        plt.savefig(save_location)
+        imsave(fname=save_location, arr=image)
     if auto_show:
         plt.show()
 
