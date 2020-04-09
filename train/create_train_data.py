@@ -5,7 +5,6 @@ import shutil
 import zipfile
 import logging
 import numpy as np
-import networkx as nx
 import matplotlib.pyplot as plt
 
 from pathlib import Path
@@ -14,7 +13,7 @@ from skimage import transform
 HULL_TH = 200
 TARGET_SHAPE = (1280, 768)
 
-IN_DIR, OUT_DIR = 'C:/Users/FlorijnWim/Downloads/verwerkt', 'out'
+IN_DIR, OUT_DIR = 'C:/Users/FlorijnWim/Downloads/verwerkt', '../train_data'
 
 
 def generate_box_mask(box, mask_shape, image_gs):
@@ -22,28 +21,9 @@ def generate_box_mask(box, mask_shape, image_gs):
     corner_points = cv2.boxPoints(rct).astype(np.int32)
     mask = np.zeros(mask_shape, dtype=np.uint8)
     mask = cv2.fillConvexPoly(mask, corner_points, 1)
-    mask = transform.resize(mask, output_shape=TARGET_SHAPE, mode='edge', order=0, preserve_range=True).astype(np.uint8)
-    mask = np.nonzero(mask)
-
-    zeros = np.zeros(image_gs.shape)
-    zeros[mask] = image_gs[mask] < HULL_TH
-    mask = np.nonzero(zeros)
-
-    image = np.zeros(image_gs.shape)
-    if len(mask[0]):
-        mask_points = np.hstack((mask[1][:, None], mask[0][:, None]))
-        hull = cv2.convexHull(mask_points)
-        cv2.drawContours(image, [hull], -1, 1, thickness=-1)
-
-    mask = np.nonzero(image)
-
-    return mask
-
-
-def generate_line_mask(line, mask_shape, image_gs):
-    mask = np.zeros(mask_shape, dtype='uint8')
-    cv2.line(mask, (int(line[0][0]), int(line[0][1])), (int(line[1][0]), int(line[1][1])), 255, 3)
-    mask = transform.resize(mask, output_shape=TARGET_SHAPE, mode='edge', order=0, preserve_range=True).astype(np.uint8)
+    mask = transform \
+        .resize(mask, output_shape=TARGET_SHAPE, mode='edge', order=0, preserve_range=True) \
+        .astype(np.uint8)
     mask = np.nonzero(mask)
 
     zeros = np.zeros(image_gs.shape)
@@ -109,27 +89,6 @@ def generate_parcel_number_masks_from_json(obs, image_shape, image_gs):
     return masks
 
 
-def generate_lines_from_json(obs, image_shape, image_gs):
-    lines, points_dict = obs['lines'], obs['points']
-
-    graph = nx.Graph()
-
-    lines_list = []
-    for line, points in lines.items():
-        graph.add_nodes_from(points['points'])
-        for i, end in enumerate(points['points'][1:]):
-            start = points['points'][i]
-            graph.add_edge(start, end)
-            lines_list.append([points_dict[start]['position'], points_dict[end]['position']])
-
-    for connected_component in nx.connected_components(graph):
-        print(connected_component)
-
-    masks = list(map(lambda x: generate_line_mask(x, image_shape, image_gs), lines_list))
-
-    return masks
-
-
 def generate_building_from_json(obs, image_shape, image_gs):
     points_dict, buildings = obs['points'], obs['buildings']
 
@@ -142,14 +101,21 @@ def generate_building_from_json(obs, image_shape, image_gs):
     return masks
 
 
-def get_masked(img, measurement_masks, parcel_number_masks, visualize=False):
+def get_masked(img, measurement_masks, parcel_number_masks, building_masks, visualize=False):
     alpha = 0.4
     mask_img = img.copy()
 
-    for mask in measurement_masks:
-        mask_img[mask] = mask_img[mask] * [1., 2., 1.] * alpha + (1 - alpha)
-    for mask in parcel_number_masks:
-        mask_img[mask] = mask_img[mask] * [2., 1., 1.] * alpha + (1 - alpha)
+    if measurement_masks is not None:
+        for mask in measurement_masks:
+            mask_img[mask] = mask_img[mask] * [1., 2., 1.] * alpha + (1 - alpha)
+
+    if parcel_number_masks is not None:
+        for mask in parcel_number_masks:
+            mask_img[mask] = mask_img[mask] * [2., 1., 1.] * alpha + (1 - alpha)
+
+    if building_masks is not None:
+        for mask in building_masks:
+            mask_img[mask] = mask_img[mask] * [1., 1., 2.] * alpha + (1 - alpha)
 
     if visualize:
         plt.figure(figsize=(4, 4))
@@ -159,7 +125,7 @@ def get_masked(img, measurement_masks, parcel_number_masks, visualize=False):
     return mask_img
 
 
-def read_zip(zip_name):
+def read_zip(zip_name, measurement_masks=True, parcel_number_masks=True, building_masks=True):
     with zipfile.ZipFile(zip_name, 'r') as archive:
         prefix, postfix = 'observations/snapshots/latest/', '.latest.json'
         sketch_files = list(filter(lambda x: x.startswith(prefix) and x.endswith(postfix), archive.namelist()))
@@ -189,19 +155,40 @@ def read_zip(zip_name):
                     json_data = json.loads(fh.read())
                 image_gs = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-                measurement_output_path = os.path.join(base_dir, 'measurement_masks')
-                Path(measurement_output_path).mkdir(parents=True, exist_ok=True)
-                measurement_masks = generate_measurement_masks_from_json(json_data, image_shape, image_gs)
-                for index, mask in enumerate(measurement_masks):
-                    np.save(os.path.join(measurement_output_path, '{i}.npy'.format(i=index)), mask)
+                if measurement_masks:
+                    measurement_output_path = os.path.join(base_dir, 'measurement_masks')
+                    Path(measurement_output_path).mkdir(parents=True, exist_ok=True)
+                    m_masks = generate_measurement_masks_from_json(json_data, image_shape, image_gs)
+                else:
+                    m_masks = None
 
-                parcel_output_path = os.path.join(base_dir, 'parcel_number_masks')
-                Path(parcel_output_path).mkdir(parents=True, exist_ok=True)
-                parcel_number_masks = generate_parcel_number_masks_from_json(json_data, image_shape, image_gs)
-                for index, mask in enumerate(parcel_number_masks):
-                    np.save(os.path.join(parcel_output_path, '{i}.npy'.format(i=index)), mask)
+                if parcel_number_masks:
+                    parcel_output_path = os.path.join(base_dir, 'parcel_number_masks')
+                    Path(parcel_output_path).mkdir(parents=True, exist_ok=True)
+                    p_masks = generate_parcel_number_masks_from_json(json_data, image_shape, image_gs)
+                else:
+                    p_masks = None
 
-                masked_img = get_masked(image, measurement_masks, parcel_number_masks, visualize=False)
+                if building_masks:
+                    building_output_path = os.path.join(base_dir, 'building_masks')
+                    Path(building_output_path).mkdir(parents=True, exist_ok=True)
+                    b_masks = generate_building_from_json(json_data, image_shape, image_gs)
+                else:
+                    b_masks = None
+
+                masked_img = get_masked(image, m_masks, p_masks, b_masks, visualize=False)
+
+                if measurement_masks:
+                    for index, mask in enumerate(m_masks):
+                        np.save(os.path.join(measurement_output_path, '{i}.npy'.format(i=index)), mask)
+
+                if parcel_number_masks:
+                    for index, mask in enumerate(p_masks):
+                        np.save(os.path.join(parcel_output_path, '{i}.npy'.format(i=index)), mask)
+
+                if building_masks:
+                    for index, mask in enumerate(b_masks):
+                        np.save(os.path.join(building_output_path, '{i}.npy'.format(i=index)), mask)
 
                 cv2.imwrite(os.path.join(base_dir, 'image.png'), image)
                 cv2.imwrite(os.path.join(base_dir, 'masked.png'), masked_img)
