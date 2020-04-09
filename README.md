@@ -1,8 +1,8 @@
 # Image segmentation using Mask-RCNN
 
-Intended for field sketches. Train data examples:
+Intended for field sketches.
 
-Original: ![Measurement](images/image.png)  \
-Masked: ![Measurement](images/masked.png)
+Train data example:
+![Measurement](images/im.png)
 
 Training can be started from train/train.ipynb

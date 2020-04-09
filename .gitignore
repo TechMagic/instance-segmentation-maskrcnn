@@ -1,7 +1,7 @@
 .idea/
 .ipynb_checkpoints/
 
- mrcnn/__pycache__
+mrcnn/__pycache__
 assets/
 cocoapi-master/
 logs/
