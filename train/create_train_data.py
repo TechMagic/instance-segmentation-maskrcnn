@@ -103,26 +103,45 @@ def generate_building_from_json(obs, image_shape, image_gs):
 
 def get_masked(img, measurement_masks, parcel_number_masks, building_masks, visualize=False):
     alpha = 0.4
-    mask_img = img.copy()
+    masked = np.zeros(img.shape)
+    mask_img = img.copy() if visualize else None
 
     if measurement_masks is not None:
         for mask in measurement_masks:
-            mask_img[mask] = mask_img[mask] * [1., 2., 1.] * alpha + (1 - alpha)
+            masked[mask] = 1
 
+            if visualize:
+                mask_img[mask] = mask_img[mask] * [1., 2., 1.] * alpha + (1 - alpha)
+
+    non_overlapping_parcel_number_masks = []
     if parcel_number_masks is not None:
         for mask in parcel_number_masks:
-            mask_img[mask] = mask_img[mask] * [2., 1., 1.] * alpha + (1 - alpha)
+            non_overlapping_idx = np.where(masked[mask] == 0)[0]
+            if len(non_overlapping_idx):
+                mask = (mask[0][non_overlapping_idx], mask[1][non_overlapping_idx])
+            masked[mask] = 1
+            non_overlapping_parcel_number_masks.append(mask)
 
+            if visualize:
+                mask_img[mask] = mask_img[mask] * [2., 1., 1.] * alpha + (1 - alpha)
+
+    non_overlapping_building_masks = []
     if building_masks is not None:
         for mask in building_masks:
-            mask_img[mask] = mask_img[mask] * [1., 1., 2.] * alpha + (1 - alpha)
+            non_overlapping_idx = np.where(masked[mask] == 0)[0]
+            if len(non_overlapping_idx):
+                mask = (mask[0][non_overlapping_idx], mask[1][non_overlapping_idx])
+            non_overlapping_building_masks.append(mask)
+
+            if visualize:
+                mask_img[mask] = mask_img[mask] * [1., 1., 2.] * alpha + (1 - alpha)
 
     if visualize:
         plt.figure(figsize=(4, 4))
         plt.imshow(mask_img)
         plt.show()
 
-    return mask_img
+    return measurement_masks, non_overlapping_parcel_number_masks, non_overlapping_building_masks
 
 
 def read_zip(zip_name, measurement_masks=True, parcel_number_masks=True, building_masks=True):
@@ -176,7 +195,7 @@ def read_zip(zip_name, measurement_masks=True, parcel_number_masks=True, buildin
                 else:
                     b_masks = None
 
-                masked_img = get_masked(image, m_masks, p_masks, b_masks, visualize=False)
+                m_masks, p_masks, b_masks = get_masked(image, m_masks, p_masks, b_masks, visualize=False)
 
                 if measurement_masks:
                     for index, mask in enumerate(m_masks):
@@ -191,7 +210,6 @@ def read_zip(zip_name, measurement_masks=True, parcel_number_masks=True, buildin
                         np.save(os.path.join(building_output_path, '{i}.npy'.format(i=index)), mask)
 
                 cv2.imwrite(os.path.join(base_dir, 'image.png'), image)
-                cv2.imwrite(os.path.join(base_dir, 'masked.png'), masked_img)
 
 
 if __name__ == '__main__':
