@@ -2,6 +2,7 @@ import os
 import cv2
 import json
 import shutil
+import random
 import zipfile
 import logging
 import numpy as np
@@ -165,21 +166,26 @@ def read_zip(zip_name, measurement_masks=True, parcel_number_masks=True, buildin
                     .resize(image, output_shape=TARGET_SHAPE, mode='edge', order=3, preserve_range=True) \
                     .astype(np.uint8)
 
-                base_dir = os.path.join(OUT_DIR, sketch_name)
-                if os.path.exists(base_dir):
-                    shutil.rmtree(base_dir)
-                Path(base_dir).mkdir(parents=True)
-
                 with archive.open(sketch_file, 'r') as fh:
                     json_data = json.loads(fh.read())
                 image_gs = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
                 if measurement_masks:
-                    measurement_output_path = os.path.join(base_dir, 'measurement_masks')
-                    Path(measurement_output_path).mkdir(parents=True, exist_ok=True)
                     m_masks = generate_measurement_masks_from_json(json_data, image_shape, image_gs)
+
+                    if not len(m_masks):
+                        continue
                 else:
                     m_masks = None
+
+                base_dir = os.path.join(OUT_DIR, sketch_name)
+                if os.path.exists(base_dir):
+                    shutil.rmtree(base_dir)
+                Path(base_dir).mkdir(parents=True)
+
+                if measurement_masks:
+                    measurement_output_path = os.path.join(base_dir, 'measurement_masks')
+                    Path(measurement_output_path).mkdir(parents=True, exist_ok=True)
 
                 if parcel_number_masks:
                     parcel_output_path = os.path.join(base_dir, 'parcel_number_masks')
@@ -209,12 +215,14 @@ def read_zip(zip_name, measurement_masks=True, parcel_number_masks=True, buildin
                     for index, mask in enumerate(b_masks):
                         np.save(os.path.join(building_output_path, '{i}.npy'.format(i=index)), mask)
 
-                cv2.imwrite(os.path.join(base_dir, 'image.png'), image)
+                cv2.imwrite(os.path.join(base_dir, 'image.tif'), image)
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format='%(asctime)s;%(levelname)s;%(message)s')
 
-    for j, name in enumerate(os.listdir(IN_DIR)):
+    zip_file_names = os.listdir(IN_DIR)
+    random.shuffle(zip_file_names)
+    for j, name in enumerate(zip_file_names):
         logging.info('Processing project: {index}: {name}.'.format(index=j, name=name))
-        read_zip(os.path.join(IN_DIR, name))
+        read_zip(os.path.join(IN_DIR, name), building_masks=False)
