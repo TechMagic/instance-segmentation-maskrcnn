@@ -3,6 +3,6 @@
 Intended for field sketches.
 
 Train data instance:
-![Measurement](images/im.png)
+![Measurement](images/img.png)
 
 Training can be started from train/train.ipynb
