@@ -154,7 +154,7 @@ def read_zip(zip_name, measurement_masks=True, parcel_number_masks=True, buildin
 
             logging.info('Processing sketch: {index}: {name}.'.format(index=i, name=sketch_name))
 
-            attachment_prefix, img_extension = 'observations/attachments/front_jpeg_removed/' + sketch_name, '.png'
+            attachment_prefix, img_extension = 'observations/attachments/front/' + sketch_name, '.JPG'
             image_files = list(filter(lambda x: x.startswith(attachment_prefix) and x.endswith(img_extension),
                                       archive.namelist()))
             if len(image_files):

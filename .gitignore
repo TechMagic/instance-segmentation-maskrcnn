@@ -7,5 +7,5 @@ cocoapi-master/
 logs/
 train_data/
 samples/
-venv/
+env/
 mask_rcnn_coco.h5
