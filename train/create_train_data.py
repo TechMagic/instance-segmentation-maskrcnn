@@ -9,7 +9,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from pathlib import Path
-from skimage import transform
 
 TARGET_SHAPE = (2048, 1280)
 IN_DIR, OUT_DIR = 'C:/Users/FlorijnWim/Downloads/verwerkt', '../train_data'
@@ -20,10 +19,10 @@ def generate_box_mask(box, mask_shape):
     corner_points = cv2.boxPoints(rct).astype(np.int32)
     mask = np.zeros(mask_shape, dtype=np.uint8)
     mask = cv2.fillConvexPoly(mask, corner_points, 1)
-    mask = transform \
-        .resize(mask, output_shape=TARGET_SHAPE, mode='edge', order=0, preserve_range=True) \
-        .astype(np.uint8)
+
+    mask = cv2.resize(mask, (TARGET_SHAPE[1], TARGET_SHAPE[0])).astype(np.uint8)
     mask = np.nonzero(mask)
+    assert len(mask[0])
 
     return mask
 
@@ -118,9 +117,7 @@ def read_zip(zip_name, measurement_masks=True, parcel_number_masks=True):
                 image = cv2.imdecode(np.frombuffer(file, np.uint8), 1)
                 image_shape = image.shape[:2]
 
-                image = transform \
-                    .resize(image, output_shape=TARGET_SHAPE, mode='edge', order=3, preserve_range=True) \
-                    .astype(np.uint8)
+                image = cv2.resize(image, (TARGET_SHAPE[1], TARGET_SHAPE[0])).astype(np.uint8)
 
                 with archive.open(sketch_file, 'r') as fh:
                     json_data = json.loads(fh.read())
