@@ -2,7 +2,6 @@ import os
 import cv2
 import json
 import shutil
-import random
 import zipfile
 import logging
 import numpy as np
@@ -11,7 +10,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 TARGET_SHAPE = (2048, 1280)
-IN_DIR, OUT_DIR = 'C:/Users/FlorijnWim/Downloads/verwerkt', '../train_data'
+IN_DIR, OUT_DIR = 'D:/verwerkt', '../train_data'
 
 
 def generate_box_mask(box, mask_shape):
@@ -173,7 +172,6 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format='%(asctime)s;%(levelname)s;%(message)s')
 
     zip_file_names = os.listdir(IN_DIR)
-    random.shuffle(zip_file_names)
     for j, name in enumerate(zip_file_names):
         logging.info('Processing project {index}: {name}.'.format(index=j, name=name))
         read_zip(os.path.join(IN_DIR, name))

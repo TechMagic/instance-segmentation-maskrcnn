@@ -9,3 +9,4 @@ train_data/
 samples/
 env/
 mask_rcnn_coco.h5
+weights/

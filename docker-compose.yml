@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  api:
+    build:
+      context: "."
+    ports:
+      - 5003:5003
+    environment:
+      - WORKERS=4
+      - PORT=5003
+      - TIMEOUT=20
+      - MAX_REQUESTS=500
+      - WEIGHTS=/app/weights/model_weights.h5
