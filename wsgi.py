@@ -24,7 +24,7 @@ class InferenceConfig(Config):
     IMAGES_PER_GPU = 1
 
     # Give the configuration a recognizable name
-    NAME = "sketch"
+    NAME = 'sketch'
 
     BACKBONE = 'resnet50'
 

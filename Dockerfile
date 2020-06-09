@@ -10,7 +10,7 @@ ARG WEIGHTS=/app/weights/model_weights.h5
 RUN apt-get update \
  && apt-get install -y libsm6 libxext6 libxrender-dev
 
-COPY docker-requirements.txt requirements.txt
+COPY docker/requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 
 COPY wsgi.py /app/wsgi.py
@@ -18,7 +18,7 @@ COPY mrcnn /app/mrcnn
 COPY weights /app/weights
 WORKDIR /app
 
-COPY entrypoint.sh entrypoint.sh
+COPY docker/entrypoint.sh entrypoint.sh
 RUN chmod +x entrypoint.sh
 
 ENV PORT=$PORT

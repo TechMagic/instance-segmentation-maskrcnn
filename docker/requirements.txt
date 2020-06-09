@@ -4,4 +4,4 @@ requests==2.23.0
 gunicorn==20.0.4
 opencv-python==4.2.0.34
 keras==2.1.0
-scikit-image
+scikit-image==0.17.2
